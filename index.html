@@ -138,24 +138,21 @@
   }
   .new-trip-form-box.show { display: block; }
 
-  /* 底部導覽列：放大視窗時四個大功能維持一樣的距離不分散，且彼此間隔寬敞舒適 */
+  /* 底部導覽列：手機與電腦皆完美置中平均分配，絕不超出螢幕邊界 */
   .bottom-nav {
     position: fixed; bottom: 0; left: 0; right: 0;
     background: var(--nav-bg); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
     border-top: 0.5px solid var(--separator);
-    padding: 10px 16px calc(10px + env(safe-area-inset-bottom)); z-index: 100;
+    padding: 10px 12px calc(10px + env(safe-area-inset-bottom)); z-index: 100;
   }
   .bottom-nav-inner {
-    width: max-content; margin: 0 auto;
-    display: flex; justify-content: center; align-items: center; gap: 80px;
-  }
-  @media (max-width: 520px) {
-    .bottom-nav-inner { gap: 44px; }
+    width: 100%; max-width: 420px; margin: 0 auto;
+    display: flex; justify-content: space-around; align-items: center;
   }
   .nav-item {
     display: flex; flex-direction: column; align-items: center; gap: 5px;
-    color: var(--text-sub); font-size: 11px; font-weight: 600; cursor: pointer; width: 68px;
-    flex-shrink: 0; transition: transform 0.15s, color 0.15s;
+    color: var(--text-sub); font-size: 11px; font-weight: 600; cursor: pointer;
+    flex: 1; max-width: 76px; transition: transform 0.15s, color 0.15s;
   }
   .nav-item:active { transform: scale(0.94); }
   .nav-item.active { color: var(--accent); font-weight: 700; }
