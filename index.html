@@ -37,6 +37,12 @@
 
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
   
+  html, body {
+    width: 100%; max-width: 100vw;
+    overflow-x: hidden;
+    overscroll-behavior-x: none;
+  }
+
   body {
     background-color: var(--bg-color);
     color: var(--text-main);
@@ -45,6 +51,7 @@
     padding-top: env(safe-area-inset-top);
     padding-bottom: 112px;
     overscroll-behavior-y: none;
+    position: relative;
   }
 
   /* 頂部標題列：白底搭配深海藍與金色點綴 */
@@ -89,21 +96,26 @@
   }
   .action-box-btn:active { transform: scale(0.96); background: var(--primary-light); }
 
-  /* 7 & 8. 進 App 前的全螢幕入口：白底背景、無行李箱圖示、名字 + 四格分開白色數字框 + 新增行程 */
+  /* 7 & 8. 進 App 前的全螢幕入口：固定上下滑動、禁止左右滑動 */
   .welcome-gate-overlay {
     position: fixed; inset: 0;
     background: #FFFFFF;
     display: none; align-items: center; justify-content: center;
-    z-index: 500; padding: 20px; overflow-y: auto;
+    z-index: 500; padding: 16px;
+    overflow-x: hidden; overflow-y: auto;
+    overscroll-behavior-x: none; touch-action: pan-y;
   }
   .welcome-gate-overlay.show { display: flex; }
   .welcome-card {
     position: relative;
-    background: #FFFFFF; width: 100%; max-width: 410px;
-    border-radius: 24px; padding: 32px 22px 28px;
+    background: #FFFFFF; width: 100%; max-width: 400px;
+    border-radius: 24px; padding: 32px 20px 26px;
     border: 1.5px solid var(--separator);
     box-shadow: 0 14px 36px rgba(9, 52, 94, 0.10);
-    text-align: center; max-height: 92vh; overflow-y: auto; display: flex; flex-direction: column;
+    text-align: center; max-height: 92vh;
+    overflow-x: hidden; overflow-y: auto;
+    overscroll-behavior-x: none; touch-action: pan-y;
+    display: flex; flex-direction: column;
   }
   /* 3. 首頁右上角的關閉叉叉按鈕 */
   .welcome-close-btn {
@@ -125,23 +137,28 @@
     text-align: left; margin: 4px 0 8px 2px;
   }
   .welcome-input {
-    width: 100%; background: #FFFFFF; border: 1.5px solid #CBD5E1;
+    width: 100%; min-width: 0; background: #FFFFFF; border: 1.5px solid #CBD5E1;
     padding: 12px 14px; font-size: 15px; border-radius: 12px; color: var(--text-main);
     margin-bottom: 18px; outline: none; font-weight: 600;
     transition: border-color 0.15s, box-shadow 0.15s;
   }
   .welcome-input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-light); }
 
-  /* 四碼數字獨立白色方格 */
+  /* 1. 四碼數字獨立白色方格：縮小並使用 4 欄 Grid 嚴格限制寬度，絕不超出邊界 */
   .code-boxes-wrap {
-    display: flex; justify-content: space-between; gap: 12px;
-    margin-bottom: 10px;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 10px;
+    width: 100%;
+    margin: 0 auto 10px;
   }
   .code-digit-box {
-    flex: 1; height: 56px; max-width: 74px;
-    background: #FFFFFF; border: 2px solid #CBD5E1; border-radius: 14px;
-    text-align: center; font-size: 24px; font-weight: 800; color: var(--primary);
-    outline: none; transition: all 0.15s;
+    width: 100%; min-width: 0; height: 48px;
+    padding: 0;
+    background: #FFFFFF; border: 2px solid #CBD5E1; border-radius: 12px;
+    text-align: center; font-size: 20px; font-weight: 800; color: var(--primary);
+    outline: none; transition: border-color 0.15s;
+    -webkit-appearance: none; appearance: none;
     -moz-appearance: textfield;
   }
   .code-digit-box::-webkit-outer-spin-button,
@@ -191,6 +208,7 @@
   .new-trip-form-box {
     background: var(--surface-sub); border: 1.5px solid var(--primary);
     border-radius: 14px; padding: 14px; margin-bottom: 12px; text-align: left; display: none;
+    width: 100%; max-width: 100%; overflow: hidden;
   }
   .new-trip-form-box.show { display: block; }
 
@@ -230,7 +248,7 @@
   .nav-item.active .icon-outline { display: none; }
   .nav-item.active .nav-icon svg { transform: scale(1.08); }
 
-  .page { display: none; max-width: 800px; margin: 0 auto; padding: 16px; animation: fadeIn 0.2s ease-out; }
+  .page { display: none; max-width: 800px; margin: 0 auto; padding: 16px; animation: fadeIn 0.2s ease-out; overflow-x: hidden; }
   .page.active { display: block; }
   @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 
@@ -404,9 +422,9 @@
   .info-tag.shared { background: var(--accent); color: #FFFFFF; border: none; }
   .info-subtitle { font-size: 14px; font-weight: 700; color: var(--primary); margin-top: 2px; }
 
-  .modal-overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.4); display: none; align-items: flex-end; justify-content: center; padding: 0 10px calc(22px + env(safe-area-inset-bottom)); z-index: 200; }
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.4); display: none; align-items: flex-end; justify-content: center; padding: 0 10px calc(22px + env(safe-area-inset-bottom)); z-index: 200; overflow-x: hidden; }
   .modal-overlay.show { display: flex; }
-  .modal-content { background: #FFFFFF; width: 100%; max-width: 500px; border-radius: 22px; padding: 20px 20px 26px; box-shadow: 0 10px 32px rgba(0, 0, 0, 0.18); animation: slideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1); }
+  .modal-content { background: #FFFFFF; width: 100%; max-width: 500px; border-radius: 22px; padding: 20px 20px 26px; box-shadow: 0 10px 32px rgba(0, 0, 0, 0.18); animation: slideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1); overflow-x: hidden; }
   @media (min-width: 600px) { .modal-overlay { align-items: center; padding: 20px; } .modal-content { border-radius: 20px; padding-bottom: 20px; } }
   @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
   
@@ -414,8 +432,37 @@
   .modal-title { font-size: 18px; font-weight: 800; color: var(--primary); }
   .modal-close { color: var(--primary); font-weight: 700; cursor: pointer; }
   
-  .input-field { width: 100%; background: var(--surface-sub); border: 1px solid var(--separator); padding: 12px 16px; font-size: 16px; border-radius: 10px; margin-bottom: 12px; outline: none; color: var(--text-main); }
+  .input-field {
+    display: block;
+    width: 100%; max-width: 100%; min-width: 0;
+    background: var(--surface-sub); border: 1px solid var(--separator);
+    padding: 12px 14px; font-size: 16px; border-radius: 10px;
+    margin-bottom: 12px; outline: none; color: var(--text-main);
+    -webkit-appearance: none; appearance: none;
+  }
   .input-field:focus { border-color: var(--primary); background: #FFFFFF; box-shadow: 0 0 0 2px var(--primary-light); }
+  /* 2 & 4. 修正 iOS Safari 日期選擇框超出容器與卡到的問題 */
+  input[type="date"].input-field {
+    -webkit-appearance: none; appearance: none;
+    display: block;
+    width: 100% !important; max-width: 100% !important; min-width: 0 !important;
+    min-height: 44px; line-height: 1.25;
+    text-align: left; overflow: hidden;
+  }
+  input[type="date"].input-field::-webkit-date-and-time-value {
+    text-align: left; margin: 0;
+  }
+  .date-field-wrap {
+    width: 100%; max-width: 100%; min-width: 0; overflow: hidden;
+  }
+  .new-trip-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 82px;
+    gap: 10px;
+    width: 100%;
+    margin-bottom: 10px;
+    align-items: start;
+  }
   
   .btn-submit { width: 100%; background: var(--primary); color: #FFFFFF; border: none; padding: 14px; border-radius: 12px; font-size: 16px; font-weight: 700; cursor: pointer; margin-top: 8px; transition: opacity 0.15s; }
   .btn-submit:active { opacity: 0.9; }
@@ -480,10 +527,10 @@
 
     <div class="welcome-label">2. 輸入旅行編號</div>
     <div class="code-boxes-wrap" id="codeBoxesWrap">
-      <input type="text" inputmode="numeric" pattern="[0-9]*" maxlength="4" class="code-digit-box" id="codeDigit0" autocomplete="one-time-code">
-      <input type="text" inputmode="numeric" pattern="[0-9]*" maxlength="4" class="code-digit-box" id="codeDigit1" autocomplete="off">
-      <input type="text" inputmode="numeric" pattern="[0-9]*" maxlength="4" class="code-digit-box" id="codeDigit2" autocomplete="off">
-      <input type="text" inputmode="numeric" pattern="[0-9]*" maxlength="4" class="code-digit-box" id="codeDigit3" autocomplete="off">
+      <input type="text" size="1" inputmode="numeric" pattern="[0-9]*" maxlength="4" class="code-digit-box" id="codeDigit0" autocomplete="one-time-code">
+      <input type="text" size="1" inputmode="numeric" pattern="[0-9]*" maxlength="4" class="code-digit-box" id="codeDigit1" autocomplete="off">
+      <input type="text" size="1" inputmode="numeric" pattern="[0-9]*" maxlength="4" class="code-digit-box" id="codeDigit2" autocomplete="off">
+      <input type="text" size="1" inputmode="numeric" pattern="[0-9]*" maxlength="4" class="code-digit-box" id="codeDigit3" autocomplete="off">
     </div>
     <div class="gate-error-msg" id="gateErrorMsg"></div>
 
@@ -504,14 +551,14 @@
     <div class="new-trip-form-box" id="newTripFormBox">
       <div style="font-size:13px; font-weight:800; color:var(--primary); margin-bottom:8px;">✨ 建立全新旅遊行程</div>
       <input type="text" class="input-field" id="newTripNameInput" placeholder="新行程名稱 (例如：東京五日自由行)" style="margin-bottom:8px; padding:10px 12px; font-size:14px;">
-      <div style="display:flex; gap:8px; margin-bottom:10px;">
-        <div style="flex:1;">
+      <div class="new-trip-grid">
+        <div class="date-field-wrap">
           <div style="font-size:11px; color:var(--text-sub); margin-bottom:4px;">出發日期</div>
-          <input type="date" class="input-field" id="newTripStartInput" style="margin-bottom:0; padding:8px 10px; font-size:13px;">
+          <input type="date" class="input-field" id="newTripStartInput" style="margin-bottom:0; padding:9px 10px; font-size:13px;">
         </div>
-        <div style="width:90px;">
+        <div class="date-field-wrap">
           <div style="font-size:11px; color:var(--text-sub); margin-bottom:4px;">天數</div>
-          <input type="number" class="input-field" id="newTripDaysInput" min="1" max="30" value="5" style="margin-bottom:0; padding:8px 10px; font-size:13px;">
+          <input type="number" class="input-field" id="newTripDaysInput" min="1" max="30" value="5" style="margin-bottom:0; padding:9px 10px; font-size:13px;">
         </div>
       </div>
       <button type="button" class="btn-submit" style="margin-top:0; padding:11px; font-size:14px;" onclick="createAndEnterNewTrip()">建立並進入新行程</button>
@@ -801,7 +848,9 @@
     <div style="font-size:12px; color:var(--text-sub); margin-bottom:6px; font-weight:600;">旅程名稱</div>
     <input type="text" class="input-field" id="tripNameInput" placeholder="旅程名稱" onchange="updateTripSettings()">
     <div style="font-size:12px; color:var(--text-sub); margin-bottom:6px; font-weight:600;">出發日期</div>
-    <input type="date" class="input-field" id="startDateInput" onchange="updateTripSettings()">
+    <div class="date-field-wrap">
+      <input type="date" class="input-field" id="startDateInput" onchange="updateTripSettings()">
+    </div>
     <div style="font-size:12px; color:var(--text-sub); margin-bottom:6px; font-weight:600;">天數</div>
     <input type="number" class="input-field" id="daysInput" min="1" max="30" value="3" onchange="updateTripSettings()">
     <button type="button" class="btn-danger" style="margin-top:8px;" onclick="deleteCurrentTrip()">刪除此行程</button>
