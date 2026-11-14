@@ -642,7 +642,13 @@
 
 <!-- 頁面 3：行李清單 -->
 <div class="page" id="page-packing">
-  <div class="section-title">個人行前行李清單</div>
+  <div class="section-title" style="display:flex; justify-content:space-between; align-items:center;">
+    <span>個人行前行李清單</span>
+    <div style="display:flex; gap:8px; align-items:center; text-transform:none;">
+      <span class="action-box-btn" id="applyPackingTemplateBtn" onclick="applyDefaultPackingTemplate()">帶入常用模板</span>
+      <span class="action-box-btn" onclick="openPackingTemplateModal()">編輯模板</span>
+    </div>
+  </div>
   <div class="list-group" id="packingListContainer"></div>
   <div class="list-group">
     <div class="add-btn" onclick="addPackingItemPrompt()">
@@ -776,8 +782,8 @@
       <div class="modal-close" onclick="closeModal('wishItemModal')">取消</div>
     </div>
     <input type="text" class="input-field" id="wishItemTitle" placeholder="地點名稱">
-    <input type="text" class="input-field" id="wishItemNote" placeholder="推薦特色或備註">
     <input type="text" class="input-field" id="wishItemLoc" placeholder="Google 地圖連結、搜尋關鍵字或地址">
+    <input type="text" class="input-field" id="wishItemNote" placeholder="備註">
     <button class="btn-submit" id="wishItemSubmitBtn" onclick="submitWishItem()">儲存地點</button>
     <button class="btn-danger" id="wishItemDeleteBtn" style="margin-top:10px; display:none;" onclick="deleteCurrentWishItem()">刪除此收藏地點</button>
   </div>
@@ -838,6 +844,28 @@
     <input type="text" class="input-field" id="packingItemName" placeholder="物品名稱">
     <button class="btn-submit" id="packingSubmitBtn" onclick="submitPackingItem()">加入清單</button>
     <button class="btn-danger" id="packingDeleteBtn" style="margin-top:10px; display:none;" onclick="deleteCurrentPacking()">刪除此物品</button>
+  </div>
+</div>
+
+<!-- 5-2. 自訂常用行李模板視窗 -->
+<div class="modal-overlay" id="packingTemplateModal">
+  <div class="modal-content" style="max-height:86vh; display:flex; flex-direction:column;">
+    <div class="modal-header">
+      <div class="modal-title">編輯常用行李模板</div>
+      <div class="modal-close" onclick="closeModal('packingTemplateModal')">完成</div>
+    </div>
+    <div style="font-size:12px; color:var(--text-sub); margin-bottom:10px; line-height:1.4;">
+      此模板會綁定你的姓名同步至雲端，之後在任何新行程點擊「帶入常用模板」即可一鍵加入。
+    </div>
+    <div style="display:flex; gap:8px; margin-bottom:12px;">
+      <input type="text" class="input-field" id="newTemplateItemInput" placeholder="輸入想加入模板的常用物品" style="margin-bottom:0; flex:1; height:42px; padding:0 12px; font-size:14px;">
+      <button type="button" class="btn-submit" style="margin-top:0; width:auto; padding:0 16px; height:42px; font-size:14px; white-space:nowrap;" onclick="addCustomTemplateItem()">＋ 新增</button>
+    </div>
+    <div class="list-group" id="templateItemsListContainer" style="flex:1; overflow-y:auto; margin-bottom:12px; max-height:42vh;"></div>
+    <div style="display:flex; gap:8px;">
+      <button type="button" class="btn-secondary" style="padding:11px; font-size:13px;" id="saveCurrentAsTemplateBtn" onclick="saveCurrentPackingAsTemplate()">將目前行李存為模板</button>
+      <button type="button" class="btn-secondary" style="padding:11px; font-size:13px; width:auto; white-space:nowrap;" onclick="resetDefaultPackingTemplate()">恢復預設</button>
+    </div>
   </div>
 </div>
 
@@ -941,7 +969,7 @@
 
   // 4. 備忘錄四大分類固定向量圖示（與行程表五分類一致風格，跨平台永不走樣）
   const INFO_TYPE_ICONS = {
-    flight: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NCA2NCI+CiAgPGRlZnM+CiAgICA8bGluZWFyR3JhZGllbnQgaWQ9InNreUJnIiB4MT0iMCIgeTE9IjAiIHgyPSIxIiB5Mj0iMSI+CiAgICAgIDxzdG9wIG9mZnNldD0iMCUiIHN0b3AtY29sb3I9IiMzOEJERjgiLz4KICAgICAgPHN0b3Agb2Zmc2V0PSI1NSUiIHN0b3AtY29sb3I9IiMwMjg0QzciLz4KICAgICAgPHN0b3Agb2Zmc2V0PSIxMDAlIiBzdG9wLWNvbG9yPSIjMDkzNDVFIi8+CiAgICA8L2xpbmVhckdyYWRpZW50PgogICAgPGxpbmVhckdyYWRpZW50IGlkPSJwbGFuZUJvZHkiIHgxPSIwIiB5MT0iMCIgeDI9IjEiIHkyPSIxIj4KICAgICAgPHN0b3Agb2Zmc2V0PSIwJSIgc3RvcC1jb2xvcj0iI0ZGRkZGRiIvPgogICAgICA8c3RvcCBvZmZzZXQ9IjEwMCUiIHN0b3AtY29sb3I9IiNFMkU4RjAiLz4KICAgIDwvbGluZWFyR3JhZGllbnQ+CiAgPC9kZWZzPgogIDxyZWN0IHg9IjYiIHk9IjYiIHdpZHRoPSI1MiIgaGVpZ2h0PSI1MiIgcng9IjE0IiBmaWxsPSJ1cmwoI3NreUJnKSIvPgogIDxjaXJjbGUgY3g9IjE4IiBjeT0iMTgiIHI9IjIiIGZpbGw9IiNGREUwNDciIG9wYWNpdHk9IjAuOSIvPgogIDxjaXJjbGUgY3g9IjQ4IiBjeT0iNDYiIHI9IjEuNiIgZmlsbD0iI0UwRjJGRSIgb3BhY2l0eT0iMC43Ii8+CiAgPCEtLSBKZXQgQWlycGxhbmUgc29hcmluZyB0b3AtcmlnaHQgLS0+CiAgPHBhdGggZD0iTTQ4IDE2IEM1MCAxNCwgNTIgMTYsIDUwIDE4IEwzOSAyOSBMNDYgNDcgTDQyIDUwIEwzMSAzNSBMMjIgNDQgTDIzIDUwIEwyMCA1MiBMMTYgNDUgTDkgNDEgTDExIDM4IEwxNyAzOSBMMjYgMzAgTDExIDE5IEwxNCAxNSBMMzIgMjIgTDQzIDExIFoiIGZpbGw9InVybCgjcGxhbmVCb2R5KSIgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMSwgMykgc2NhbGUoMC45MikiLz4KICA8cGF0aCBkPSJNNDQgMTkgTDM0IDI5IiBzdHJva2U9IiMzOEJERjgiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+Cjwvc3ZnPg==",
+    flight: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NCA2NCI+CiAgPGRlZnM+CiAgICA8bGluZWFyR3JhZGllbnQgaWQ9InNreUJnIiB4MT0iMCIgeTE9IjAiIHgyPSIxIiB5Mj0iMSI+CiAgICAgIDxzdG9wIG9mZnNldD0iMCUiIHN0b3AtY29sb3I9IiMyNTYzRUIiLz4KICAgICAgPHN0b3Agb2Zmc2V0PSI1NSUiIHN0b3AtY29sb3I9IiMxRDRFRDgiLz4KICAgICAgPHN0b3Agb2Zmc2V0PSIxMDAlIiBzdG9wLWNvbG9yPSIjMDkzNDVFIi8+CiAgICA8L2xpbmVhckdyYWRpZW50PgogIDwvZGVmcz4KICA8IS0tIEJsdWUgcm91bmRlZCBzcXVhcmUgYmFja2dyb3VuZCAtLT4KICA8cmVjdCB4PSI0IiB5PSI0IiB3aWR0aD0iNTYiIGhlaWdodD0iNTYiIHJ4PSIxNCIgZmlsbD0idXJsKCNza3lCZykiLz4KICA8IS0tIENyaXNwIHN5bW1ldHJpYyBjb21tZXJjaWFsIGpldCBhaXJsaW5lciByb3RhdGVkIDQ1IGRlZyAocG9pbnRpbmcgdG9wLXJpZ2h0KSAtLT4KICA8ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSgzMiwgMzIpIHJvdGF0ZSg0NSkgdHJhbnNsYXRlKC0zMiwgLTMyKSI+CiAgICA8IS0tIFR3aW4gd2luZyBlbmdpbmVzIC0tPgogICAgPHJlY3QgeD0iMTkiIHk9IjI1IiB3aWR0aD0iNC4yIiBoZWlnaHQ9IjcuNSIgcng9IjIiIGZpbGw9IiNFMEYyRkUiLz4KICAgIDxyZWN0IHg9IjQwLjgiIHk9IjI1IiB3aWR0aD0iNC4yIiBoZWlnaHQ9IjcuNSIgcng9IjIiIGZpbGw9IiNFMEYyRkUiLz4KICAgIDwhLS0gTWFpbiBzeW1tZXRyaWMgYWlybGluZXIgYm9keSwgc3dlcHQgd2luZ3MsIGFuZCB0YWlscGxhbmUgLS0+CiAgICA8cGF0aCBkPSJNMzIgMTAgQzM0LjIgMTAgMzUuNiAxMi4yIDM1LjYgMTUuMiBWMjQuMiBMNTIgMzMuNSBWMzcuOCBMMzUuNiAzMi41IFY0My4yIEw0MyA0Ny44IFY1MS4yIEwzMiA0OC4yIEwyMSA1MS4yIFY0Ny44IEwyOC40IDQzLjIgVjMyLjUgTDEyIDM3LjggVjMzLjUgTDI4LjQgMjQuMiBWMTUuMiBDMjguNCAxMi4yIDI5LjggMTAgMzIgMTAgWiIgZmlsbD0iI0ZGRkZGRiIvPgogICAgPCEtLSBDb2NrcGl0IHdpbmRzaGllbGQgYXJjIC0tPgogICAgPHBhdGggZD0iTTI5LjggMTUuOCBRMzIgMTQuMiAzNC4yIDE1LjgiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzFENEVEOCIgc3Ryb2tlLXdpZHRoPSIxLjYiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgogIDwvZz4KPC9zdmc+",
     hotel: ITEM_TYPE_ICONS.hotel,
     ticket: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NCA2NCI+CiAgPGRlZnM+CiAgICA8bGluZWFyR3JhZGllbnQgaWQ9InRrdEdyYWQiIHgxPSIwIiB5MT0iMCIgeDI9IjEiIHkyPSIxIj4KICAgICAgPHN0b3Agb2Zmc2V0PSIwJSIgc3RvcC1jb2xvcj0iI0ZCQkYyNCIvPgogICAgICA8c3RvcCBvZmZzZXQ9IjUwJSIgc3RvcC1jb2xvcj0iI0Y1OUUwQiIvPgogICAgICA8c3RvcCBvZmZzZXQ9IjEwMCUiIHN0b3AtY29sb3I9IiNEOTc3MDYiLz4KICAgIDwvbGluZWFyR3JhZGllbnQ+CiAgICA8bGluZWFyR3JhZGllbnQgaWQ9InRrdFN1YiIgeDE9IjAiIHkxPSIwIiB4Mj0iMCIgeTI9IjEiPgogICAgICA8c3RvcCBvZmZzZXQ9IjAlIiBzdG9wLWNvbG9yPSIjRkVGM0M3Ii8+CiAgICAgIDxzdG9wIG9mZnNldD0iMTAwJSIgc3RvcC1jb2xvcj0iI0ZERTY4QSIvPgogICAgPC9saW5lYXJHcmFkaWVudD4KICA8L2RlZnM+CiAgPGcgdHJhbnNmb3JtPSJyb3RhdGUoLTEyIDMyIDMyKSI+CiAgICA8IS0tIFRpY2tldCBtYWluIGJvZHkgd2l0aCBzaWRlIG5vdGNoZXMgLS0+CiAgICA8cGF0aCBkPSJNOCAxOCBINTYgQTMgMyAwIDAgMSA1OSAyMSBWMjcgQTUgNSAwIDAgMCA1OSAzNyBWNDMgQTMgMyAwIDAgMSA1NiA0NiBIOCBBMyAzIDAgMCAxIDUgNDMgVjM3IEE1IDUgMCAwIDAgNSAyNyBWMjEgQTMgMyAwIDAgMSA4IDE4IFoiIGZpbGw9InVybCgjdGt0R3JhZCkiIHN0cm9rZT0iI0I0NTMwOSIgc3Ryb2tlLXdpZHRoPSIxLjIiLz4KICAgIDwhLS0gSW5uZXIgdGlja2V0IGZyYW1lIC0tPgogICAgPHJlY3QgeD0iMTEiIHk9IjIyIiB3aWR0aD0iMjgiIGhlaWdodD0iMjAiIHJ4PSIyLjUiIGZpbGw9InVybCgjdGt0U3ViKSIvPgogICAgPCEtLSBQZXJmb3JhdGVkIGRpdmlkZXIgbGluZSAtLT4KICAgIDxsaW5lIHgxPSI0MyIgeTE9IjIwIiB4Mj0iNDMiIHkyPSI0NCIgc3Ryb2tlPSIjRkZGQkVCIiBzdHJva2Utd2lkdGg9IjIuMiIgc3Ryb2tlLWRhc2hhcnJheT0iMyAzIiBzdHJva2UtbGluZWNhcD0icm91bmQiLz4KICAgIDwhLS0gU3RhciBlbWJsZW0gb24gdGlja2V0IC0tPgogICAgPHBvbHlnb24gcG9pbnRzPSIyNSwyNS41IDI2LjksMjkuNSAzMS4zLDMwLjEgMjguMSwzMy4xIDI4LjksMzcuNCAyNSwzNS4zIDIxLjEsMzcuNCAyMS45LDMzLjEgMTguNywzMC4xIDIzLjEsMjkuNSIgZmlsbD0iI0Q5NzcwNiIvPgogICAgPCEtLSBCYXJjb2RlIGxpbmVzIG9uIHN0dWIgLS0+CiAgICA8bGluZSB4MT0iNDgiIHkxPSIyNSIgeDI9IjQ4IiB5Mj0iMzkiIHN0cm9rZT0iI0ZGRkJFQiIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiLz4KICAgIDxsaW5lIHgxPSI1MiIgeTE9IjI1IiB4Mj0iNTIiIHkyPSIzOSIgc3Ryb2tlPSIjRkZGQkVCIiBzdHJva2Utd2lkdGg9IjEuNSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+CiAgPC9nPgo8L3N2Zz4=",
     other: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NCA2NCI+CiAgPGRlZnM+CiAgICA8bGluZWFyR3JhZGllbnQgaWQ9ImluZm9CZyIgeDE9IjAiIHkxPSIwIiB4Mj0iMSIgeTI9IjEiPgogICAgICA8c3RvcCBvZmZzZXQ9IjAlIiBzdG9wLWNvbG9yPSIjNjM2NkYxIi8+CiAgICAgIDxzdG9wIG9mZnNldD0iNTUlIiBzdG9wLWNvbG9yPSIjNEY0NkU1Ii8+CiAgICAgIDxzdG9wIG9mZnNldD0iMTAwJSIgc3RvcC1jb2xvcj0iIzMxMkU4MSIvPgogICAgPC9saW5lYXJHcmFkaWVudD4KICAgIDxsaW5lYXJHcmFkaWVudCBpZD0iYmFkZ2VHb2xkIiB4MT0iMCIgeTE9IjAiIHgyPSIxIiB5Mj0iMSI+CiAgICAgIDxzdG9wIG9mZnNldD0iMCUiIHN0b3AtY29sb3I9IiNGREUwNDciLz4KICAgICAgPHN0b3Agb2Zmc2V0PSIxMDAlIiBzdG9wLWNvbG9yPSIjRjU5RTBCIi8+CiAgICA8L2xpbmVhckdyYWRpZW50PgogIDwvZGVmcz4KICA8IS0tIFJvdW5kZWQgTWVtbyBDbGlwYm9hcmQgLyBDYXJkIC0tPgogIDxyZWN0IHg9IjEwIiB5PSI4IiB3aWR0aD0iNDQiIGhlaWdodD0iNDgiIHJ4PSIxMSIgZmlsbD0idXJsKCNpbmZvQmcpIi8+CiAgPCEtLSBUb3AgR29sZGVuIENsaXAgLyBCb29rbWFyayAtLT4KICA8cmVjdCB4PSIyMyIgeT0iNSIgd2lkdGg9IjE4IiBoZWlnaHQ9IjciIHJ4PSIzLjUiIGZpbGw9InVybCgjYmFkZ2VHb2xkKSIvPgogIDwhLS0gQ3Jpc3AgV2hpdGUgSW5mbyBMaW5lcyAtLT4KICA8cmVjdCB4PSIxOCIgeT0iMjEiIHdpZHRoPSIyOCIgaGVpZ2h0PSI0IiByeD0iMiIgZmlsbD0iI0ZGRkZGRiIgb3BhY2l0eT0iMC45NSIvPgogIDxyZWN0IHg9IjE4IiB5PSIzMCIgd2lkdGg9IjIyIiBoZWlnaHQ9IjQiIHJ4PSIyIiBmaWxsPSIjRTBFN0ZGIiBvcGFjaXR5PSIwLjkiLz4KICA8cmVjdCB4PSIxOCIgeT0iMzkiIHdpZHRoPSIxNiIgaGVpZ2h0PSI0IiByeD0iMiIgZmlsbD0iI0UwRTdGRiIgb3BhY2l0eT0iMC44NSIvPgogIDwhLS0gR2xvd2luZyBHb2xkIFN0YXIgQWNjZW50IC0tPgogIDxjaXJjbGUgY3g9IjQzIiBjeT0iNDEiIHI9IjYuNSIgZmlsbD0idXJsKCNiYWRnZUdvbGQpIi8+CiAgPHBhdGggZD0iTTQzIDM3LjUgVjQxLjUgTTQzIDQ0LjIgSDQzLjAyIiBzdHJva2U9IiMxRTFCNEIiIHN0cm9rZS13aWR0aD0iMi4yIiBzdHJva2UtbGluZWNhcD0icm91bmQiLz4KPC9zdmc+"
@@ -1135,6 +1163,12 @@
               if (e.key === 'Enter') submitEditName();
           });
       }
+      const newTplInp = document.getElementById('newTemplateItemInput');
+      if (newTplInp) {
+          newTplInp.addEventListener('keydown', (e) => {
+              if (e.key === 'Enter') addCustomTemplateItem();
+          });
+      }
 
       const savedUid = localStorage.getItem('tripnotes_current_user_id');
       if (savedUid) currentUserId = savedUid.trim();
@@ -1254,17 +1288,16 @@
       }
       currentUserId = nameVal;
       localStorage.setItem('tripnotes_current_user_id', currentUserId);
-      loadPersonalDataFromLocal();
-      updateUserIdUI();
-      initPersonalFirebase();
-
       currentTripDocId = targetDocId;
       localStorage.setItem('tripnotes_last_trip_doc_id', currentTripDocId);
       docRef = db.collection("trips").doc(currentTripDocId);
       activeDayIndex = 0;
+
       loadDataFromLocal();
       migrateOldData();
+      updateUserIdUI();
       renderAll();
+      initPersonalFirebase();
       initFirebase();
       document.getElementById('welcomeGate').classList.remove('show');
   }
@@ -1301,7 +1334,7 @@
 
           snapshot.forEach(doc => {
               const id = doc.id;
-              if (id.startsWith('TRIPNOTES-PERSONAL-')) return;
+              if (id.startsWith('TRIPNOTES-PERSONAL-') || id.startsWith('TRIPNOTES-TEMPLATE-')) return;
               const d = doc.data() || {};
               if (d.deleted) return;
               if (String(d.roomCode || '').trim() === code) {
@@ -1319,14 +1352,14 @@
           errEl.textContent = '';
           currentUserId = nameVal;
           localStorage.setItem('tripnotes_current_user_id', currentUserId);
-          loadPersonalDataFromLocal();
-          updateUserIdUI();
-          initPersonalFirebase();
-
           currentTripDocId = matchedDocId;
           localStorage.setItem('tripnotes_last_trip_doc_id', currentTripDocId);
           docRef = db.collection("trips").doc(currentTripDocId);
           activeDayIndex = 0;
+
+          loadPersonalDataFromLocal();
+          updateUserIdUI();
+          initPersonalFirebase();
 
           appData = matchedData;
           migrateOldData();
@@ -1383,14 +1416,16 @@
           const newDocId = 'TRIP-' + Date.now();
           currentUserId = nameVal;
           localStorage.setItem('tripnotes_current_user_id', currentUserId);
-          loadPersonalDataFromLocal();
-          updateUserIdUI();
-          initPersonalFirebase();
-
           currentTripDocId = newDocId;
           localStorage.setItem('tripnotes_last_trip_doc_id', currentTripDocId);
           docRef = db.collection("trips").doc(currentTripDocId);
           activeDayIndex = 0;
+
+          localPacking = [];
+          localPrivateInfos = [];
+          saveLocalPersonalData();
+          updateUserIdUI();
+          initPersonalFirebase();
 
           appData = {
               tripName: newName,
@@ -1528,15 +1563,28 @@
       if (!appData.itinerary) appData.itinerary = [];
   }
 
+  // 1. 個人資料（含隱私備忘錄與行李清單）依「目前行程 ID + 姓名」獨立儲存，不同行程之間互不干擾、不同步
   function getPersonalStorageKey(type) {
+      const tripPart = currentTripDocId || 'DEFAULT';
       const suffix = currentUserId ? ('_' + currentUserId.toLowerCase()) : '';
-      return `tripnotes_personal_${type}_v1${suffix}`;
+      return `tripnotes_personal_${type}_v2_${tripPart}${suffix}`;
   }
 
   function loadDataFromLocal() {
       const raw = localStorage.getItem('tripnotes_data_' + currentTripDocId);
       if (raw) {
           try { appData = JSON.parse(raw); } catch (e) {}
+      } else {
+          appData = {
+              tripName: 'Trip GO',
+              roomCode: '',
+              startDate: formatDate(new Date()),
+              days: 3,
+              itinerary: [],
+              wishCats: [],
+              wishlist: [],
+              infos: []
+          };
       }
       loadPersonalDataFromLocal();
   }
@@ -1579,11 +1627,13 @@
   }
 
   function getPersonalDocRef(uid) {
+      const tripPart = encodeURIComponent(currentTripDocId || 'DEFAULT');
       const safeId = encodeURIComponent(uid.trim().toLowerCase());
-      return db.collection("trips").doc("TRIPNOTES-PERSONAL-" + safeId);
+      return db.collection("trips").doc("TRIPNOTES-PERSONAL-" + tripPart + "-" + safeId);
   }
 
   function initPersonalFirebase() {
+      initTemplateFirebase();
       if (personalUnsubscribe) {
           personalUnsubscribe();
           personalUnsubscribe = null;
@@ -2126,6 +2176,189 @@
       closeModal('wishItemModal');
       renderWishlist();
       broadcastData();
+  }
+
+  const DEFAULT_PACKING_ITEMS = [
+      '護照',
+      '錢包（外幣現金、信用卡）',
+      '網卡 / eSIM',
+      '手機與充電線',
+      '行動電源',
+      '萬國轉接頭',
+      '個人常備藥品',
+      '換洗衣物與內衣褲',
+      '襪子與睡衣',
+      '盥洗用品與保養品',
+      '隨身面紙與濕紙巾',
+      '摺疊傘'
+  ];
+
+  let userPackingTemplate = [...DEFAULT_PACKING_ITEMS];
+  let templateUnsubscribe = null;
+
+  function getTemplateStorageKey() {
+      const suffix = currentUserId ? ('_' + currentUserId.toLowerCase()) : '';
+      return `tripnotes_packing_template_v1${suffix}`;
+  }
+
+  function getTemplateDocRef(uid) {
+      const safeId = encodeURIComponent(uid.trim().toLowerCase());
+      return db.collection("trips").doc("TRIPNOTES-TEMPLATE-" + safeId);
+  }
+
+  function loadTemplateFromLocal() {
+      const raw = localStorage.getItem(getTemplateStorageKey());
+      if (raw) {
+          try {
+              const parsed = JSON.parse(raw);
+              if (Array.isArray(parsed)) {
+                  userPackingTemplate = parsed;
+                  return;
+              }
+          } catch (e) {}
+      }
+      userPackingTemplate = [...DEFAULT_PACKING_ITEMS];
+  }
+
+  function saveTemplateLocally() {
+      localStorage.setItem(getTemplateStorageKey(), JSON.stringify(userPackingTemplate));
+  }
+
+  function syncTemplateData() {
+      saveTemplateLocally();
+      if (currentUserId) {
+          getTemplateDocRef(currentUserId).set({
+              userId: currentUserId,
+              templateItems: userPackingTemplate,
+              updatedAt: Date.now()
+          }).catch(err => console.error("Template Firebase Sync Error:", err));
+      }
+  }
+
+  function initTemplateFirebase() {
+      if (templateUnsubscribe) {
+          templateUnsubscribe();
+          templateUnsubscribe = null;
+      }
+      loadTemplateFromLocal();
+      if (!currentUserId) return;
+
+      const tDocRef = getTemplateDocRef(currentUserId);
+      templateUnsubscribe = tDocRef.onSnapshot((doc) => {
+          if (doc.exists) {
+              const data = doc.data();
+              if (Array.isArray(data.templateItems)) {
+                  if (JSON.stringify(userPackingTemplate) !== JSON.stringify(data.templateItems)) {
+                      userPackingTemplate = data.templateItems;
+                      saveTemplateLocally();
+                      renderTemplateItemsList();
+                  }
+              }
+          } else {
+              tDocRef.set({
+                  userId: currentUserId,
+                  templateItems: userPackingTemplate,
+                  updatedAt: Date.now()
+              }).catch(err => console.error("Template Firebase Init Error:", err));
+          }
+      }, (error) => {
+          console.error("Template Firebase Listener Error:", error);
+      });
+  }
+
+  function applyDefaultPackingTemplate() {
+      const existingNames = new Set(localPacking.map(p => (p.text || '').trim()));
+      const now = Date.now();
+      let addedCount = 0;
+      userPackingTemplate.forEach((itemName, idx) => {
+          const cleanName = (itemName || '').trim();
+          if (cleanName && !existingNames.has(cleanName)) {
+              localPacking.push({
+                  id: 'p_' + (now + idx),
+                  text: cleanName,
+                  checked: false
+              });
+              existingNames.add(cleanName);
+              addedCount++;
+          }
+      });
+      if (addedCount > 0) {
+          syncPersonalData();
+          renderPacking();
+      }
+      const btn = document.getElementById('applyPackingTemplateBtn');
+      if (btn) {
+          btn.textContent = addedCount > 0 ? `✓ 已帶入 ${addedCount} 項` : '✓ 清單已齊全';
+          setTimeout(() => {
+              btn.textContent = '帶入常用模板';
+          }, 1500);
+      }
+  }
+
+  function openPackingTemplateModal() {
+      renderTemplateItemsList();
+      document.getElementById('newTemplateItemInput').value = '';
+      document.getElementById('packingTemplateModal').classList.add('show');
+  }
+
+  function renderTemplateItemsList() {
+      const container = document.getElementById('templateItemsListContainer');
+      if (!container) return;
+      container.innerHTML = '';
+      if (!userPackingTemplate || userPackingTemplate.length === 0) {
+          container.innerHTML = `<div style="padding:18px; text-align:center; color:var(--text-sub); font-size:13px;">目前模板尚無物品，請在上方輸入新增！</div>`;
+          return;
+      }
+      userPackingTemplate.forEach((itemName, idx) => {
+          const row = document.createElement('div');
+          row.className = 'list-item';
+          row.style.padding = '10px 14px';
+          row.innerHTML = `
+            <div style="flex:1; font-size:15px; font-weight:600; color:var(--text-main);">${escapeHtml(itemName)}</div>
+            <button type="button" style="background:transparent; border:none; color:#EF4444; font-size:15px; font-weight:800; cursor:pointer; padding:4px 8px;" onclick="removeCustomTemplateItem(${idx})" title="從模板移除">✕</button>
+          `;
+          container.appendChild(row);
+      });
+  }
+
+  function addCustomTemplateItem() {
+      const inp = document.getElementById('newTemplateItemInput');
+      const val = (inp.value || '').trim();
+      if (!val) return;
+      if (!userPackingTemplate.includes(val)) {
+          userPackingTemplate.push(val);
+          syncTemplateData();
+          renderTemplateItemsList();
+      }
+      inp.value = '';
+      inp.focus();
+  }
+
+  function removeCustomTemplateItem(idx) {
+      userPackingTemplate.splice(idx, 1);
+      syncTemplateData();
+      renderTemplateItemsList();
+  }
+
+  function saveCurrentPackingAsTemplate() {
+      const currentNames = localPacking.map(p => (p.text || '').trim()).filter(Boolean);
+      if (currentNames.length === 0) return;
+      userPackingTemplate = [...new Set(currentNames)];
+      syncTemplateData();
+      renderTemplateItemsList();
+      const btn = document.getElementById('saveCurrentAsTemplateBtn');
+      if (btn) {
+          btn.textContent = '✓ 已存為常用模板';
+          setTimeout(() => {
+              btn.textContent = '將目前行李存為模板';
+          }, 1500);
+      }
+  }
+
+  function resetDefaultPackingTemplate() {
+      userPackingTemplate = [...DEFAULT_PACKING_ITEMS];
+      syncTemplateData();
+      renderTemplateItemsList();
   }
 
   function addPackingItemPrompt() {
